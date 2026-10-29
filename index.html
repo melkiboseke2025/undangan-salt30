@@ -307,12 +307,6 @@ img { max-width: 100%; }
         <button class="btn solid submit" type="submit" id="rSubmit">Kirim RSVP</button>
         <p class="status" id="rStatus" role="status"></p>
       </form>
-      <div class="fallback" id="rBox" hidden>
-        <label for="rText">Pesan konfirmasi untuk panitia:</label>
-        <textarea id="rText" readonly></textarea>
-        <a class="btn solid" id="rWa" href="#" target="_blank" rel="noopener" hidden>Kirim lewat WhatsApp</a>
-        <button class="btn" type="button" id="rCopy">Salin pesan</button>
-      </div>
     </div>
   </section>
 
@@ -336,12 +330,6 @@ img { max-width: 100%; }
         <button class="btn solid submit" type="submit" id="wSubmit">Kirim</button>
         <p class="status" id="wStatus" role="status"></p>
       </form>
-      <div class="fallback" id="wBox" hidden>
-        <label for="wText">Pesan ucapan untuk panitia:</label>
-        <textarea id="wText" readonly></textarea>
-        <a class="btn solid" id="wWa" href="#" target="_blank" rel="noopener" hidden>Kirim lewat WhatsApp</a>
-        <button class="btn" type="button" id="wCopy">Salin pesan</button>
-      </div>
     </div>
   </section>
 
@@ -512,30 +500,8 @@ img { max-width: 100%; }
       .catch(function () { return false; });
   }
 
-  /* ---------- Pengiriman lewat WhatsApp atau salin ---------- */
+  /* ---------- Status formulir ---------- */
   function setStatus(el, text, cls) { el.textContent = text; el.className = "status" + (cls ? " " + cls : ""); }
-
-  function deliver(prefix, text, statusEl) {
-    $(prefix + "Text").value = text;
-    $(prefix + "Box").hidden = false;
-    var wa = $(prefix + "Wa");
-    if (WA_NUMBER) {
-      wa.href = "https://wa.me/" + WA_NUMBER + "?text=" + encodeURIComponent(text);
-      wa.hidden = false;
-      setStatus(statusEl, "Tekan tombol WhatsApp di bawah untuk mengirim ke panitia.", "ok");
-    } else {
-      wa.hidden = true;
-      setStatus(statusEl, "Salin pesan di bawah dan kirim ke panitia.", "warn");
-    }
-  }
-  function bindCopy(prefix, statusEl) {
-    $(prefix + "Copy").addEventListener("click", function () {
-      var t = $(prefix + "Text");
-      function sel() { t.focus(); t.select(); setStatus(statusEl, "Pesan sudah dipilih. Salin secara manual.", "warn"); }
-      try { navigator.clipboard.writeText(t.value).then(function () { setStatus(statusEl, "Pesan tersalin. Kirim ke panitia.", "ok"); }, sel); } catch (e) { sel(); }
-    });
-  }
-  bindCopy("r", $("rStatus")); bindCopy("w", $("wStatus"));
 
   if (RSVP_FORM_URL) {
     $("rFormLink").href = RSVP_FORM_URL; $("rFormLink").hidden = false;
@@ -554,12 +520,14 @@ img { max-width: 100%; }
       setStatus($("rStatus"), "Mengirim konfirmasi...", "warn");
       sendToSheets({ action: "rsvp", name: name, type: type, attendance: att, count: count, invitee: guestName })
         .then(function (sent) {
-          deliver("r", lines.join("\n"), $("rStatus"));
-          if (sent) setStatus($("rStatus"), "Permintaan RSVP telah dikirim. Mohon panitia memeriksa tab RSVP di Google Sheets untuk memastikan data masuk.", "ok");
-          else setStatus($("rStatus"), "Pengiriman otomatis belum dapat dipastikan. Gunakan pesan di bawah sebagai cadangan dan hubungi panitia.", "warn");
+          if (sent) {
+            setStatus($("rStatus"), "Terima kasih! Permintaan konfirmasi kehadiran Anda telah diproses.", "ok");
+          } else {
+            setStatus($("rStatus"), "Pengiriman belum dapat dipastikan. Silakan hubungi panitia jika diperlukan.", "warn");
+          }
         });
     } else {
-      deliver("r", lines.join("\n"), $("rStatus"));
+      setStatus($("rStatus"), "Formulir belum terhubung ke sistem pengiriman. Silakan hubungi panitia.", "warn");
     }
   });
 
@@ -573,12 +541,14 @@ img { max-width: 100%; }
       setStatus($("wStatus"), "Mengirim ucapan...", "warn");
       sendToSheets({ action: "ucapan", name: name, sticker: sticker, message: msg, invitee: guestName })
         .then(function (sent) {
-          deliver("w", lines.join("\n"), $("wStatus"));
-          if (sent) setStatus($("wStatus"), "Permintaan ucapan telah dikirim. Mohon panitia memeriksa tab Ucapan di Google Sheets untuk memastikan data masuk.", "ok");
-          else setStatus($("wStatus"), "Pengiriman otomatis belum dapat dipastikan. Gunakan pesan di bawah sebagai cadangan dan hubungi panitia.", "warn");
+          if (sent) {
+            setStatus($("wStatus"), "Terima kasih! Ucapan Anda telah diproses.", "ok");
+          } else {
+            setStatus($("wStatus"), "Pengiriman belum dapat dipastikan. Silakan hubungi panitia jika diperlukan.", "warn");
+          }
         });
     } else {
-      deliver("w", lines.join("\n"), $("wStatus"));
+      setStatus($("wStatus"), "Formulir belum terhubung ke sistem pengiriman. Silakan hubungi panitia.", "warn");
     }
   });
 })();
